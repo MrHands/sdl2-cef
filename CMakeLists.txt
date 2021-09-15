@@ -4,7 +4,7 @@
 
 # See the included README.md file for usage instructions.
 
-cmake_minimum_required(VERSION 2.8.12.1)
+cmake_minimum_required(VERSION 3.19.3)
 
 # Only generate Debug and Release configuration types.
 set(CMAKE_CONFIGURATION_TYPES Debug Release)
@@ -22,7 +22,7 @@ set_property(GLOBAL PROPERTY OS_FOLDERS ON)
 #
 
 # Specify the CEF distribution version.
-set(CEF_VERSION "3.3396.1777.g636f29b")
+set(CEF_VERSION "3.3396.1777.g636f29b" CACHE STRING "Version of CEF to download.")
 
 # Determine the platform.
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
@@ -44,9 +44,12 @@ endif()
 # Add this project's cmake/ directory to the module path.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-# Download and extract the CEF binary distribution (executes DownloadCEF.cmake).
-include(DownloadCEF)
-DownloadCEF("${CEF_PLATFORM}" "${CEF_VERSION}" "${CMAKE_SOURCE_DIR}/third_party/cef")
+if(NOT DEFINED CEF_ROOT)
+  set(CEF_ROOT "" CACHE PATH "Path to CEF library.")
+  # Download and extract the CEF binary distribution (executes DownloadCEF.cmake).
+  include(DownloadCEF)
+  DownloadCEF("${CEF_PLATFORM}" "${CEF_VERSION}" "${CMAKE_SOURCE_DIR}/third_party/cef")
+endif()
 
 # Add the CEF binary distribution's cmake/ directory to the module path.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CEF_ROOT}/cmake")
