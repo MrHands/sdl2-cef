@@ -23,6 +23,7 @@ set_property(GLOBAL PROPERTY OS_FOLDERS ON)
 
 # Specify the CEF distribution version.
 set(CEF_VERSION "3.3396.1777.g636f29b" CACHE STRING "Version of CEF to download.")
+set(USE_CLANG_FORMAT true CACHE BOOL "Use clang-format on source code.")
 
 # Determine the platform.
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
@@ -44,8 +45,8 @@ endif()
 # Add this project's cmake/ directory to the module path.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-if(NOT DEFINED CEF_ROOT)
-  set(CEF_ROOT "" CACHE PATH "Path to CEF library.")
+if(NOT CEF_ROOT OR NOT IS_DIRECTORY "${CEF_ROOT}")
+  message("Downloading CEF version ${CEF_VERSION} for ${CEF_PLATFORM}")
   # Download and extract the CEF binary distribution (executes DownloadCEF.cmake).
   include(DownloadCEF)
   DownloadCEF("${CEF_PLATFORM}" "${CEF_VERSION}" "${CMAKE_SOURCE_DIR}/third_party/cef")
@@ -85,31 +86,33 @@ endif()
 # Clang-format configuration.
 #
 
-if(OS_WINDOWS)
-  set(GS_PLATFORM "win32")
-  set(GS_HASHPATH "win/clang-format.exe.sha1")
-elseif(OS_MACOSX)
-  set(GS_PLATFORM "darwin")
-  set(GS_HASHPATH "mac/clang-format.sha1")
-elseif(OS_LINUX)
-  set(GS_PLATFORM "linux*")
-  set(GS_HASHPATH "linux64/clang-format.sha1")
-endif()
+if(CEF_USE_CLANG_FORMAT)
+  if(OS_WINDOWS)
+    set(GS_PLATFORM "win32")
+    set(GS_HASHPATH "win/clang-format.exe.sha1")
+  elseif(OS_MACOSX)
+    set(GS_PLATFORM "darwin")
+    set(GS_HASHPATH "mac/clang-format.sha1")
+  elseif(OS_LINUX)
+    set(GS_PLATFORM "linux*")
+    set(GS_HASHPATH "linux64/clang-format.sha1")
+  endif()
 
-message(STATUS "Downloading clang-format from Google Storage...")
-execute_process(
-  COMMAND "${PYTHON_EXECUTABLE}"
-          "tools/buildtools/download_from_google_storage.py"
-          "--no_resume"
-          "--platform=${GS_PLATFORM}"
-          "--no_auth"
-          "--bucket" "chromium-clang-format"
-          "-s" "tools/buildtools/${GS_HASHPATH}"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  RESULT_VARIABLE EXECUTE_RV
-  )
-if(NOT EXECUTE_RV STREQUAL "0")
-  message(FATAL_ERROR "Execution failed with unexpected result: ${EXECUTE_RV}")
+  message(STATUS "Downloading clang-format from Google Storage...")
+  execute_process(
+    COMMAND "${PYTHON_EXECUTABLE}"
+            "tools/buildtools/download_from_google_storage.py"
+            "--no_resume"
+            "--platform=${GS_PLATFORM}"
+            "--no_auth"
+            "--bucket" "chromium-clang-format"
+            "-s" "tools/buildtools/${GS_HASHPATH}"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    RESULT_VARIABLE EXECUTE_RV
+    )
+  if(NOT EXECUTE_RV STREQUAL "0")
+    message(FATAL_ERROR "Execution failed with unexpected result: ${EXECUTE_RV}")
+  endif()
 endif()
 
 
